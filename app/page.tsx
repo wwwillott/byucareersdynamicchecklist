@@ -23,7 +23,7 @@ import type {
 type ItemDraft = {
   label: string;
   link_url: string;
-  category: 'daily' | 'variable';
+  category: 'daily' | 'variable' | 'today_only';
   condition_question_id: string;
   condition_value: boolean;
   show_morning: boolean;
@@ -106,6 +106,7 @@ export default function HomePage() {
     return items
       .filter((item) => {
         if (!item.active) return false;
+        if (item.one_time_date_key && item.one_time_date_key !== dateKey) return false;
         const enabledShifts: ShiftKey[] = [];
         if (item.show_morning) enabledShifts.push('morning');
         if (item.show_afternoon) enabledShifts.push('afternoon');
@@ -366,11 +367,17 @@ export default function HomePage() {
         label: draft.label.trim(),
         link_url: draft.link_url.trim() ? draft.link_url.trim() : null,
         category: draft.category,
+        one_time_date_key: draft.category === 'today_only' ? dateKey : null,
         condition_question_id:
-          draft.category === 'daily' || draft.condition_question_id === ''
+          draft.category === 'daily' ||
+          draft.category === 'today_only' ||
+          draft.condition_question_id === ''
             ? null
             : draft.condition_question_id,
-        condition_value: draft.category === 'daily' ? null : draft.condition_value,
+        condition_value:
+          draft.category === 'daily' || draft.category === 'today_only'
+            ? null
+            : draft.condition_value,
         show_morning: showMorning,
         show_afternoon: showAfternoon,
         show_evening: showEvening,
@@ -725,7 +732,11 @@ export default function HomePage() {
                       <div>{item.label}</div>
                     )}
                     <div className="meta">
-                      {item.category === 'daily' ? 'Daily' : 'Variable'}
+                      {item.category === 'daily'
+                        ? 'Daily'
+                        : item.category === 'today_only'
+                        ? 'Today only'
+                        : 'Variable'}
                       {item.show_morning ? <span className="tag">Morning</span> : null}
                       {item.show_afternoon ? <span className="tag">Afternoon</span> : null}
                       {item.show_evening ? <span className="tag">Evening</span> : null}
@@ -814,21 +825,22 @@ export default function HomePage() {
                   <div className="split">
                     <div>
                       <label className="meta">Category</label>
-                      <select
-                        className="select"
-                        value={draft.category}
-                        onChange={(event) =>
-                          setDraft((prev) => ({
-                            ...prev,
-                            category: event.target.value as ItemDraft['category']
-                          }))
-                        }
-                      >
-                        <option value="daily">Daily (always)</option>
-                        <option value="variable">Variable (conditional)</option>
-                      </select>
-                    </div>
-                  </div>
+                  <select
+                    className="select"
+                    value={draft.category}
+                    onChange={(event) =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        category: event.target.value as ItemDraft['category']
+                      }))
+                    }
+                  >
+                    <option value="daily">Daily (always)</option>
+                    <option value="variable">Variable (conditional)</option>
+                    <option value="today_only">Today only (one-time)</option>
+                  </select>
+                </div>
+              </div>
                   <div className="split">
                     <div>
                       <label className="meta">Show in shifts</label>
@@ -931,6 +943,11 @@ export default function HomePage() {
                       </div>
                     </div>
                   )}
+                  {draft.category === 'today_only' ? (
+                    <div className="notice">
+                      This item will appear only for <strong>{formatMountainDate(dateKey)}</strong>.
+                    </div>
+                  ) : null}
                   <button
                     className="button"
                     onClick={async () => {
@@ -1041,26 +1058,31 @@ export default function HomePage() {
                         value={item.link_url ?? ''}
                         onChange={(event) => updateItem(item.id, { link_url: event.target.value })}
                       />
-                      <div className="meta">
-                        <select
-                          className="select"
-                          value={item.category}
-                          onChange={(event) =>
-                            updateItem(item.id, {
-                              category: event.target.value as ChecklistItem['category'],
-                              condition_question_id:
-                                event.target.value === 'daily'
-                                  ? null
-                                  : item.condition_question_id,
-                              condition_value:
-                                event.target.value === 'daily' ? null : item.condition_value
-                            })
-                          }
-                        >
-                          <option value="daily">Daily</option>
-                          <option value="variable">Variable</option>
-                        </select>
-                      </div>
+                <div className="meta">
+                  <select
+                    className="select"
+                    value={item.category}
+                    onChange={(event) =>
+                      updateItem(item.id, {
+                        category: event.target.value as ChecklistItem['category'],
+                        condition_question_id:
+                          event.target.value === 'daily' || event.target.value === 'today_only'
+                            ? null
+                            : item.condition_question_id,
+                        condition_value:
+                          event.target.value === 'daily' || event.target.value === 'today_only'
+                            ? null
+                            : item.condition_value,
+                        one_time_date_key:
+                          event.target.value === 'today_only' ? dateKey : null
+                      })
+                    }
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="variable">Variable</option>
+                    <option value="today_only">Today only</option>
+                  </select>
+                </div>
                     </div>
                     <div style={{ display: 'grid', gap: 8 }}>
                       <div className="shift-toggles">

@@ -22,13 +22,14 @@ create table if not exists checklist_items (
   id uuid primary key default gen_random_uuid(),
   label text not null,
   link_url text,
-  category text not null check (category in ('daily', 'variable')),
+  category text not null check (category in ('daily', 'variable', 'today_only')),
   condition_question_id uuid null,
   condition_value boolean,
   show_morning boolean not null default true,
   show_afternoon boolean not null default false,
   show_evening boolean not null default false,
   reset_at_shift boolean not null default false,
+  one_time_date_key text,
   sort_order integer not null default 0,
   active boolean not null default true,
   inserted_at timestamptz not null default now()
@@ -114,6 +115,7 @@ alter table checklist_items add column if not exists show_morning boolean not nu
 alter table checklist_items add column if not exists show_afternoon boolean not null default false;
 alter table checklist_items add column if not exists show_evening boolean not null default false;
 alter table checklist_items add column if not exists reset_at_shift boolean not null default false;
+alter table checklist_items add column if not exists one_time_date_key text;
 
 alter table checklist_entries add column if not exists shift_key text not null default 'day';
 update checklist_entries set shift_key = 'day' where shift_key is null;
@@ -203,6 +205,7 @@ create policy "Public update entries" on checklist_entries for update using (tru
 - Variable checklist items can be tied to any daily question. They only appear once the question is answered for the day.
 - Checklist items can be shown in multiple shifts. Items from earlier shifts carry forward as the day progresses.
 - Items marked **Reset at shift change** will uncheck when the next shift starts.
+- **Today only** items appear just for the current date and then disappear automatically.
 - Anyone can edit checklist items mid-day.
 - Default shift times: Morning 6:00–11:59, Afternoon 12:00–17:59, Evening 18:00–5:59 (Mountain Time). Update `lib/date.ts` if you want different hours.
 

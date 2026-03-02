@@ -2,13 +2,14 @@ export type ChecklistItem = {
   id: string;
   label: string;
   link_url?: string | null;
-  category: 'daily' | 'variable';
+  category: 'daily' | 'variable' | 'today_only';
   condition_question_id?: string | null;
   condition_value?: boolean | null;
   show_morning: boolean;
   show_afternoon: boolean;
   show_evening: boolean;
   reset_at_shift: boolean;
+  one_time_date_key?: string | null;
   sort_order: number;
   active: boolean;
 };
