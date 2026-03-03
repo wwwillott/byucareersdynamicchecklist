@@ -25,6 +25,7 @@ create table if not exists checklist_items (
   category text not null check (category in ('daily', 'variable', 'today_only')),
   condition_question_id uuid null,
   condition_value boolean,
+  condition_source text not null default 'today' check (condition_source in ('today', 'yesterday')),
   show_morning boolean not null default true,
   show_afternoon boolean not null default false,
   show_evening boolean not null default false,
@@ -111,6 +112,7 @@ Run this to add multi-shift toggles and dynamic questions:
 alter table checklist_items add column if not exists link_url text;
 alter table checklist_items add column if not exists condition_question_id uuid;
 alter table checklist_items add column if not exists condition_value boolean;
+alter table checklist_items add column if not exists condition_source text not null default 'today';
 alter table checklist_items add column if not exists show_morning boolean not null default true;
 alter table checklist_items add column if not exists show_afternoon boolean not null default false;
 alter table checklist_items add column if not exists show_evening boolean not null default false;
@@ -206,6 +208,7 @@ create policy "Public update entries" on checklist_entries for update using (tru
 - Checklist items can be shown in multiple shifts. Items from earlier shifts carry forward as the day progresses.
 - Items marked **Reset at shift change** will uncheck when the next shift starts.
 - **Today only** items appear just for the current date and then disappear automatically.
+- Variable items can optionally use **yesterday's** answers (snapshot) instead of today.
 - Anyone can edit checklist items mid-day.
 - Default shift times: Morning 6:00–11:59, Afternoon 12:00–17:59, Evening 18:00–5:59 (Mountain Time). Update `lib/date.ts` if you want different hours.
 

@@ -5,6 +5,7 @@ export type ChecklistItem = {
   category: 'daily' | 'variable' | 'today_only';
   condition_question_id?: string | null;
   condition_value?: boolean | null;
+  condition_source?: 'today' | 'yesterday' | null;
   show_morning: boolean;
   show_afternoon: boolean;
   show_evening: boolean;

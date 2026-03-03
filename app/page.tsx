@@ -26,6 +26,7 @@ type ItemDraft = {
   category: 'daily' | 'variable' | 'today_only';
   condition_question_id: string;
   condition_value: boolean;
+  condition_source: 'today' | 'yesterday';
   show_morning: boolean;
   show_afternoon: boolean;
   show_evening: boolean;
@@ -58,6 +59,7 @@ export default function HomePage() {
   const [snapshotExists, setSnapshotExists] = useState(true);
   const [snapshotDismissed, setSnapshotDismissed] = useState(false);
   const [savingSnapshot, setSavingSnapshot] = useState(false);
+  const [yesterdayAnswers, setYesterdayAnswers] = useState<Record<string, boolean | null>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [draft, setDraft] = useState<ItemDraft>({
     label: '',
@@ -65,6 +67,7 @@ export default function HomePage() {
     category: 'daily',
     condition_question_id: '',
     condition_value: true,
+    condition_source: 'today',
     show_morning: true,
     show_afternoon: false,
     show_evening: false,
@@ -115,7 +118,11 @@ export default function HomePage() {
 
         if (item.category === 'variable') {
           if (!item.condition_question_id || item.condition_value === null) return false;
-          const answer = answers[item.condition_question_id];
+          const source = item.condition_source ?? 'today';
+          const answer =
+            source === 'yesterday'
+              ? { answer: yesterdayAnswers[item.condition_question_id] ?? null }
+              : answers[item.condition_question_id];
           if (!answer || answer.answer === null) return false;
           if (answer.answer !== item.condition_value) return false;
         }
@@ -217,6 +224,7 @@ export default function HomePage() {
       });
       setShiftNotes(notesMap);
       setSnapshotExists(Boolean(snapshotData));
+      setYesterdayAnswers((snapshotData?.answers as Record<string, boolean | null>) ?? {});
       setLoading(false);
     }
 
@@ -378,6 +386,7 @@ export default function HomePage() {
           draft.category === 'daily' || draft.category === 'today_only'
             ? null
             : draft.condition_value,
+        condition_source: draft.category === 'variable' ? draft.condition_source : null,
         show_morning: showMorning,
         show_afternoon: showAfternoon,
         show_evening: showEvening,
@@ -399,6 +408,7 @@ export default function HomePage() {
         category: 'daily',
         condition_question_id: '',
         condition_value: true,
+        condition_source: 'today',
         show_morning: true,
         show_afternoon: false,
         show_evening: false,
@@ -536,6 +546,8 @@ export default function HomePage() {
       setSnapshotDismissed(false);
       window.localStorage.removeItem(`snapshot-dismissed-${yesterdayKey}`);
     }
+
+    await supabase.from('daily_snapshots').delete().lt('date_key', yesterdayKey);
 
     setSavingSnapshot(false);
   }
@@ -741,7 +753,11 @@ export default function HomePage() {
                       {item.show_afternoon ? <span className="tag">Afternoon</span> : null}
                       {item.show_evening ? <span className="tag">Evening</span> : null}
                       {item.reset_at_shift ? <span className="tag">Resets</span> : null}
-                      {item.condition_question_id ? <span className="tag">Conditional</span> : null}
+                      {item.condition_question_id ? (
+                        <span className="tag">
+                          {item.condition_source === 'yesterday' ? 'Yesterday' : 'Today'}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 </label>
@@ -939,6 +955,22 @@ export default function HomePage() {
                         >
                           <option value="yes">Yes</option>
                           <option value="no">No</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="meta">Use answers from...</label>
+                        <select
+                          className="select"
+                          value={draft.condition_source}
+                          onChange={(event) =>
+                            setDraft((prev) => ({
+                              ...prev,
+                              condition_source: event.target.value as ItemDraft['condition_source']
+                            }))
+                          }
+                        >
+                          <option value="today">Today</option>
+                          <option value="yesterday">Yesterday</option>
                         </select>
                       </div>
                     </div>
@@ -1156,6 +1188,18 @@ export default function HomePage() {
                           >
                             <option value="yes">Answer is Yes</option>
                             <option value="no">Answer is No</option>
+                          </select>
+                          <select
+                            className="select"
+                            value={item.condition_source ?? 'today'}
+                            onChange={(event) =>
+                              updateItem(item.id, {
+                                condition_source: event.target.value as ChecklistItem['condition_source']
+                              })
+                            }
+                          >
+                            <option value="today">Use today</option>
+                            <option value="yesterday">Use yesterday</option>
                           </select>
                         </>
                       )}
