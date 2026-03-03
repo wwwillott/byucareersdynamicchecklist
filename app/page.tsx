@@ -386,7 +386,7 @@ export default function HomePage() {
           draft.category === 'daily' || draft.category === 'today_only'
             ? null
             : draft.condition_value,
-        condition_source: draft.category === 'variable' ? draft.condition_source : null,
+        condition_source: draft.category === 'variable' ? draft.condition_source : 'today',
         show_morning: showMorning,
         show_afternoon: showAfternoon,
         show_evening: showEvening,
@@ -1090,31 +1090,32 @@ export default function HomePage() {
                         value={item.link_url ?? ''}
                         onChange={(event) => updateItem(item.id, { link_url: event.target.value })}
                       />
-                <div className="meta">
-                  <select
-                    className="select"
-                    value={item.category}
-                    onChange={(event) =>
-                      updateItem(item.id, {
-                        category: event.target.value as ChecklistItem['category'],
-                        condition_question_id:
-                          event.target.value === 'daily' || event.target.value === 'today_only'
-                            ? null
-                            : item.condition_question_id,
-                        condition_value:
-                          event.target.value === 'daily' || event.target.value === 'today_only'
-                            ? null
-                            : item.condition_value,
-                        one_time_date_key:
-                          event.target.value === 'today_only' ? dateKey : null
-                      })
-                    }
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="variable">Variable</option>
-                    <option value="today_only">Today only</option>
-                  </select>
-                </div>
+                      <div className="meta">
+                        <select
+                          className="select"
+                          value={item.category}
+                          onChange={(event) =>
+                            updateItem(item.id, {
+                              category: event.target.value as ChecklistItem['category'],
+                              condition_question_id:
+                                event.target.value === 'daily' || event.target.value === 'today_only'
+                                  ? null
+                                  : item.condition_question_id,
+                              condition_value:
+                                event.target.value === 'daily' || event.target.value === 'today_only'
+                                  ? null
+                                  : item.condition_value,
+                              one_time_date_key:
+                                event.target.value === 'today_only' ? dateKey : null,
+                              condition_source: 'today'
+                            })
+                          }
+                        >
+                          <option value="daily">Daily</option>
+                          <option value="variable">Variable</option>
+                          <option value="today_only">Today only</option>
+                        </select>
+                      </div>
                     </div>
                     <div style={{ display: 'grid', gap: 8 }}>
                       <div className="shift-toggles">
