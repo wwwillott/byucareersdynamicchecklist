@@ -209,7 +209,8 @@ create policy "Public update entries" on checklist_entries for update using (tru
 - Items marked **Reset at shift change** will uncheck when the next shift starts.
 - **Today only** items appear just for the current date and then disappear automatically.
 - Variable items can optionally use **yesterday's** answers (snapshot) instead of today.
+- The checklist skips Saturdays and Sundays; “tomorrow” on Fridays maps to Monday, and “yesterday” on Mondays maps to Friday.
 - Anyone can edit checklist items mid-day.
-- Default shift times: Morning 6:00–11:59, Afternoon 12:00–17:59, Evening 18:00–5:59 (Mountain Time). Update `lib/date.ts` if you want different hours.
+- Default shift times: Morning 6:00–11:59, Afternoon 12:00–13:59, Evening 14:00–5:59 (Mountain Time). Update `lib/date.ts` if you want different hours.
 
 If you want richer roles later (editor vs viewer), we can add authentication and RLS policies without changing the UI much.

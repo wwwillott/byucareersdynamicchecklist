@@ -6,10 +6,14 @@ import {
   currentMountainShift,
   formatMountainDate,
   mountainDateKey,
+  nextBusinessDateKey,
+  nextBusinessWeekday,
   shiftLabel,
   SHIFT_ORDER,
   type ShiftKey,
-  yesterdayMountainDateKey
+  yesterdayMountainDateKey,
+  isMountainWeekend,
+  isMountainFriday
 } from '@/lib/date';
 import type {
   ChecklistEntry,
@@ -38,7 +42,10 @@ type QuestionDraft = {
 
 export default function HomePage() {
   const dateKey = useMemo(() => mountainDateKey(), []);
+  const nextBusinessKey = useMemo(() => nextBusinessDateKey(), []);
   const yesterdayKey = useMemo(() => yesterdayMountainDateKey(), []);
+  const isWeekend = useMemo(() => isMountainWeekend(), []);
+  const isFriday = useMemo(() => isMountainFriday(), []);
   const [activeShift, setActiveShift] = useState<ShiftKey>(() => currentMountainShift());
   const [manualShift, setManualShift] = useState(false);
   const [items, setItems] = useState<ChecklistItem[]>([]);
@@ -84,6 +91,9 @@ export default function HomePage() {
     const answer = answers[question.id];
     return !answer || answer.answer === null;
   });
+
+  const nextBusinessLabel = useMemo(() => formatMountainDate(nextBusinessKey), [nextBusinessKey]);
+  const nextBusinessWeekdayLabel = useMemo(() => nextBusinessWeekday(), []);
 
   useEffect(() => {
     document.body.dataset.shift = activeShift;
@@ -634,7 +644,11 @@ export default function HomePage() {
           Team sync is live. Any edits or check-offs you make update in real time for everyone.
         </div>
         <div className="hero-actions no-print">
-          <button className="button secondary" onClick={() => setShowEditor((prev) => !prev)}>
+          <button
+            className="button secondary"
+            disabled={isWeekend}
+            onClick={() => setShowEditor((prev) => !prev)}
+          >
             {showEditor ? 'Close checklist editor' : 'Edit checklist'}
           </button>
           <button className="button secondary" onClick={exportCsv}>
@@ -644,6 +658,7 @@ export default function HomePage() {
             Print
           </button>
         </div>
+        {isWeekend ? <div className="meta">Editor and checklist resume on weekdays.</div> : null}
         <div className="shift-toggle">
           <div className="meta">Shift on the clock</div>
           <div className="toggle-row">
@@ -678,15 +693,30 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="grid">
+      {isWeekend ? (
+        <section className="grid">
+          <div className="card">
+            <h2>Weekend Mode</h2>
+            <div className="notice">
+              The checklist doesn&apos;t run on Saturdays or Sundays. It will resume on{' '}
+              <strong>{nextBusinessLabel}</strong>.
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="grid">
         {unresolvedQuestions.length > 0 ? (
           <div className="card">
             <h2>Start of Day Questions</h2>
             <div className="meta">Answer these once per day to unlock the right checklist items.</div>
+            {isFriday ? <div className="meta">Tomorrow = {nextBusinessLabel}</div> : null}
             {unresolvedQuestions.map((question) => (
               <div className="check-item" key={question.id}>
                 <div>
-                  <strong>{question.prompt}</strong>
+                  <strong>
+                    {question.prompt}
+                    {isFriday ? <span className="tag">{nextBusinessWeekdayLabel}</span> : null}
+                  </strong>
                   <div className="meta">Your answers unlock the right checklist items.</div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -794,6 +824,7 @@ export default function HomePage() {
           </button>
         </div>
       </section>
+      )}
 
       {showEditor ? (
         <>
